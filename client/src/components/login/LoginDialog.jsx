@@ -1,7 +1,7 @@
 import React from 'react'
 import {Box, Dialog, TextField, Typography,Button ,styled} from '@mui/material';
 import { useState ,useContext} from 'react';
-import { authenticateSignup } from '../../service/api';
+import { authenticateSignup,authenticateLogIn } from '../../service/api';
 import { DataContext } from '../../context/DataProvider';
 const Component=styled(Box)`
     height:70vh;
@@ -68,6 +68,14 @@ const CreateAccount =styled(Typography)`
  cursor:pointer;
 
 `
+const Error=styled(Typography)`
+ font-size:10px;
+ color:#ff6161;
+ line-height:0;
+ margin-top:10px;
+ font-weight:600;
+
+`
 const accountinitialValues={
   login:{
     view:'login',
@@ -90,15 +98,26 @@ const signupInitialValues={
   phone:''
 } 
 
+const  loginInitialValues ={
+  username:'',
+  password:''
+}
+
 function LoginDialog({open,setOpen}) {
 
 const [account,toggleAccount]= useState(accountinitialValues.login)
 const [signup,setSignup]=useState(signupInitialValues);
+const [login,setLogin]=useState(loginInitialValues)
+const [error,setError]=useState(false)
+
+
 const{setAccount}=useContext(DataContext);
+
 
     const handleClose=()=>{
         setOpen(false);
         toggleAccount(accountinitialValues.login)
+        setError(false);
     }
     const ToggleSignup=()=>{
       toggleAccount(accountinitialValues.signup)
@@ -114,6 +133,21 @@ const{setAccount}=useContext(DataContext);
       handleClose();
       setAccount(signup.firstname);
     }
+
+   const onValuechange =(e)=>{
+     setLogin({...login,[e.target.name]:e.target.value});
+   }
+
+   const loginUser= async ()=>{
+       let response= await authenticateLogIn(login);
+      if(response.status===200){
+          handleClose();
+          setAccount(response.data.data.firstname);
+      }else{
+         setError(true);
+      }
+   }
+
   return (
     <Dialog open={open} onClose={handleClose} PaperProps={{ sx: {maxWidth:'unset'}}}>
       <Component>
@@ -125,10 +159,11 @@ const{setAccount}=useContext(DataContext);
          {
            account.view ==='login'?
          <Wrapper>
-            <TextField variant="standard" label="Enter Email/Mobile number"/>
-            <TextField variant="standard" label="Enter Password"/>
+            <TextField variant="standard"  onChange={(e)=>onValuechange(e)} name='username' label="Enter username"/>
+            {error && <Error>Please enter valid username or password</Error>}
+            <TextField variant="standard" onChange={(e)=>onValuechange(e)} name='password' label="Enter Password"/>
             <Text>By continuing, you agree to Flipkart's Terms of Use and Privacy Policy</Text>
-            <LoginButton>Login</LoginButton>
+            <LoginButton onClick={()=>loginUser()} >Login</LoginButton>
             <Typography style={{textAlign:'center'}}>OR</Typography>
             <RequestOtp>Request OTP</RequestOtp>
             <CreateAccount onClick={()=>ToggleSignup()}>New to Flipkart? Create an account</CreateAccount>
